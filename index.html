@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHOTOPUZZ</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=Nata+Sans:wght@100..900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body style="position: relative;">
+    <nav class="navBar">
+        <h1>PHOTOPUZZ</h1>
+        <div class="navBarRightPart">
+            <form class="inputImage">
+                <button class="navBarControls" id="selectImageBtn">Upload</button>
+            </form>
+            <button class="navBarControls" id="startBtn">Start</button>
+            <button class="navBarControls" id="restartBtn">Restart</button>
+            <div class="timer">
+                <p>Timer</p>
+                <div id="time">
+                    <span class="digit" id="hr">
+                        00</span>
+                    <span class="txt">Hr</span>
+                    <span class="digit" id="min">
+                        00</span>
+                    <span class="txt">Min</span>
+                    <span class="digit" id="sec">
+                        00</span>
+                    <span class="txt">Sec</span>
+                    <span class="digit" id="count">
+                        00</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="grids">
+        <div class="grid1">
+            <div class="grid1Box dropZones" id="left_1"></div>
+            <div class="grid1Box dropZones" id="left_2"></div>
+            <div class="grid1Box dropZones" id="left_3"></div>
+            <div class="grid1Box dropZones" id="left_4"></div>
+            <div class="grid1Box dropZones" id="left_5"></div>
+            <div class="grid1Box dropZones" id="left_6"></div>
+            <div class="grid1Box dropZones" id="left_7"></div>
+            <div class="grid1Box dropZones" id="left_8"></div>
+            <div class="grid1Box dropZones" id="left_9"></div>
+        </div>
+        <div class="grid2">
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+            <div class="grid2Box dropZones"></div>
+        </div>
+    </div>
+    <script>
+
+        const images = [];
+        let startFlag = false;
+        let imgURL = "";
+
+        function gameInitiate(){
+            for (let i = 1; i <= 9; i++) {
+                        let childDiv = document.createElement("div");
+                        childDiv.className = "innerBox";
+                        childDiv.id = "box" + i;
+
+                        // Set common background properties
+                        childDiv.style.backgroundImage = `url(${imgURL})`;
+                        childDiv.style.backgroundSize = "450px 450px";
+                        childDiv.style.width = "150px";
+                        childDiv.style.height = "150px";
+                        childDiv.style.overflow = "hidden";
+
+                        // Calculate and apply background position
+                        let row = Math.floor((i - 1) / 3);
+                        let col = (i - 1) % 3;
+                        let posX = -col * 150;
+                        let posY = -row * 150;
+
+                        childDiv.style.backgroundPosition = `${posX}px ${posY}px`;
+                        childDiv.addEventListener("mousedown", (e) => {
+                            if (startFlag === false) return;
+                            currentDragItem = childDiv;
+                            const rect = currentDragItem.getBoundingClientRect();
+                            offSetX = e.clientX - rect.left;
+                            offSetY = e.clientY - rect.top;
+                            const parentRect = currentDragItem.parentElement.getBoundingClientRect();
+                            currentDragItem.style.position = "absolute";
+                            currentDragItem.style.left = parentRect.left + "px";
+                            currentDragItem.style.top = parentRect.top + "px";
+                            document.body.appendChild(currentDragItem);
+                        });
+                        images.push(childDiv);
+                    }
+
+
+                    function placeRandom() {
+                        //random generator
+                        for (let i = images.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [images[i], images[j]] = [images[j], images[i]];
+                        }
+                        const boxes = document.getElementsByClassName("grid1Box");
+                        [...boxes].forEach((box, idx) => {
+                            box.appendChild(images[idx]);
+                        })
+                    }
+                    placeRandom();
+        }
+
+        document.getElementById('selectImageBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+
+            fileInput.addEventListener('change', () => {
+                images.length = 0; // Clear previous images
+                const grid1Boxes = document.querySelectorAll(".grid1Box");
+                grid1Boxes.forEach(box => {
+                    while (box.firstChild) {
+                        box.removeChild(box.firstChild);
+                    }
+                });
+
+                const file = fileInput.files[0];
+                if (file) {
+                     imgURL = URL.createObjectURL(file);
+                    gameInitiate();
+                    
+                }
+            });
+
+            fileInput.click();
+        });
+
+
+        //Drag and Move the things
+
+        let currentDragItem = null;
+        let offSetX = 0;
+        let offSetY = 0;
+
+        const dropZones = Array.from(document.querySelectorAll(".dropZones"));
+        const draggables = document.querySelectorAll(".innerBox");
+
+        document.addEventListener("mousemove", (e) => {
+            if (!currentDragItem) return;
+            if (startFlag === false) return;
+            currentDragItem.style.left = (e.clientX - offSetX) + "px";
+            currentDragItem.style.top = (e.clientY - offSetY) + "px";
+        })
+        document.addEventListener("mouseup", (e) => {
+            if (startFlag === false) return;
+            if (!currentDragItem) return;
+            const dragRect = currentDragItem.getBoundingClientRect();
+            let closestZone = null;
+            let closestDistance = Infinity;
+            for (const zone of dropZones) {
+                const zoneRect = zone.getBoundingClientRect();
+                const dx = dragRect.left - zoneRect.left;
+                const dy = dragRect.top - zoneRect.top;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < closestDistance) {
+                    closestZone = zone;
+                    closestDistance = distance;
+                }
+            }
+            console.log(closestZone);
+            if (closestZone) {
+                closestZone.appendChild(currentDragItem);
+                currentDragItem.style.left = "0px";
+                currentDragItem.style.top = "0px";
+            }
+            currentDragItem = null;
+        checkCompletion();
+        })
+        document.getElementById('startBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            startFlag = !startFlag;
+            if (startFlag) {
+                e.target.textContent = "Stop";
+                timer = true;
+                stopWatch();
+            } else {
+                timer = false;
+                e.target.textContent = "Start";
+                resetGame();
+            }
+        });
+
+        
+        const checkZones = document.querySelectorAll(".grid2Box");
+        console.log(checkZones);
+        function checkCompletion() {
+            let completed = true;
+            checkZones.forEach((zone, index) => {
+                if (zone.children.length === 0 || zone.children[0].id !== "box" + (index + 1)) {
+                    completed = false;
+                }
+            });
+            if (completed) {
+                alert("Congratulations! You completed the puzzle!");
+                timer = false;
+                startFlag = false;
+                document.getElementById('startBtn').textContent = "Start";
+                resetGame();
+            }
+        }
+
+        function resetGame(){
+            images.length = 0; // Clear previous images
+                const grid1Boxes = document.querySelectorAll(".grid1Box");
+                grid1Boxes.forEach(box => {
+                    while (box.firstChild) {
+                        box.removeChild(box.firstChild);
+                    }
+                });
+                const grid2Boxes = document.querySelectorAll(".grid2Box");
+                grid2Boxes.forEach(box => {
+                    while (box.firstChild) {
+                        box.removeChild(box.firstChild);
+                    }
+                });
+        }
+        document.getElementById('restartBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            restart();
+        });
+        function restart(){
+            timer = false;
+            startFlag = false;
+            hour = 0;
+            minute = 0;
+            second = 0;
+            count = 0;
+            document.getElementById('hr').innerHTML = "00";
+            document.getElementById('min').innerHTML = "00";
+            document.getElementById('sec').innerHTML = "00";
+            document.getElementById('count').innerHTML = "00";
+            resetGame();
+            gameInitiate();
+        }
+    </script>
+
+    <script>
+        let hour = 0;
+        let minute = 0;
+        let second = 0;
+        let count = 0;
+
+        function stopWatch() {
+            if (timer) {
+                count++;
+
+                if (count == 100) {
+                    second++;
+                    count = 0;
+                }
+
+                if (second == 60) {
+                    minute++;
+                    second = 0;
+                }
+
+                if (minute == 60) {
+                    hour++;
+                    minute = 0;
+                    second = 0;
+                }
+
+                let hrString = hour;
+                let minString = minute;
+                let secString = second;
+                let countString = count;
+
+                if (hour < 10) {
+                    hrString = "0" + hrString;
+                }
+
+                if (minute < 10) {
+                    minString = "0" + minString;
+                }
+
+                if (second < 10) {
+                    secString = "0" + secString;
+                }
+
+                if (count < 10) {
+                    countString = "0" + countString;
+                }
+
+                document.getElementById('hr').innerHTML = hrString;
+                document.getElementById('min').innerHTML = minString;
+                document.getElementById('sec').innerHTML = secString;
+                document.getElementById('count').innerHTML = countString;
+                setTimeout(stopWatch, 10);
+            }
+        }
+    </script>
+</body>
+
+</html>
